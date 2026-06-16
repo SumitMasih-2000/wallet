@@ -122,7 +122,7 @@ st.markdown("<p style='color: #94A3B8; font-size: 15px;'>Professional Portfolio 
 st.write("---")
 
 # ==============================================================================
-# OPERATIONAL SECTION 1: CORE BALANCES & KPI REPORTING
+# ROW 1: CORE BALANCES & KPI REPORTING
 # ==============================================================================
 calc_income = df_filtered[df_filtered['Amount'] > 0]['Amount'].sum()
 calc_expenses = abs(df_filtered[df_filtered['Amount'] < 0]['Amount'].sum())
@@ -174,7 +174,82 @@ with kpi_col4:
     """)
 
 # ==============================================================================
-# OPERATIONAL SECTION 2: CHARTS & EXPENDITURE BUDGET MATRICES
+# ROW 2: PRIMARY INTERACTION SUITE - AI CHAT ASSISTANT
+# ==============================================================================
+st.html("<div class='section-container'>")
+st.markdown("##### :material/forum: AI Personal Finance Assistant Chat")
+st.caption("Submit queries against active database records or request general financial planning assistance below.")
+
+search_input = st.text_input(
+    "Ask a financial question...",
+    placeholder="e.g., 'What was my highest expense?', 'How much did I spend on food?', 'What is an emergency fund?'"
+)
+
+df_debts = df_filtered[df_filtered['Amount'] < 0]
+
+if search_input:
+    query = search_input.lower().strip()
+    answered = False
+    
+    if "highest" in query or "biggest" in query or "largest" in query or "max" in query:
+        if not df_debts.empty:
+            max_row = df_debts.loc[abs(df_debts['Amount']).idxmax()]
+            st.info(f"📊 **AI Assistant Response:** The single highest recorded expenditure matching your active filters is for **{max_row['Category']}** totaling **{symbol}{abs(max_row['Amount']):,.2f}** ({max_row['Notes']}) on {max_row['Date']}.")
+        else:
+            st.info("📊 **AI Assistant Response:** No negative transaction flows match your specified category layout.")
+        answered = True
+
+    elif "spend" in query or "expense" in query or "cost" in query or "total out" in query or "food" in query:
+        category_mapping = {"food": "Dining Out", "groceries": "Groceries", "salary": "Salary", "rent": "Rent/Utilities"}
+        
+        matched_category = None
+        for keyword, actual_cat in category_mapping.items():
+            if keyword in query:
+                matched_category = actual_cat
+                break
+        
+        if not matched_category:
+            for cat in df_filtered['Category'].unique():
+                if cat.lower() in query:
+                    matched_category = cat
+                    break
+                
+        if matched_category:
+            cat_sum = abs(df_filtered[df_filtered['Category'] == matched_category]['Amount'].sum())
+            st.info(f"📊 **AI Assistant Response:** Total tracking expenses allocated toward **{matched_category}** aggregate to **{symbol}{cat_sum:,.2f}** under current filters.")
+        else:
+            st.info(f"📊 **AI Assistant Response:** Aggregate expenditures spanning all active filtration matrices match **{symbol}{calc_expenses:,.2f}**.")
+        answered = True
+
+    elif "income" in query or "salary" in query or "earn" in query:
+        st.info(f"📊 **AI Assistant Response:** Total tracked income in this viewing profile is **{symbol}{calc_income:,.2f}**.")
+        answered = True
+
+    elif "save" in query or "savings" in query or "surplus" in query:
+        st.info(f"📊 **AI Assistant Response:** Based on your operational variables, your net dynamic liquid surplus evaluates to **{symbol}{calc_savings:,.2f}**.")
+        answered = True
+
+    if not answered:
+        KNOWLEDGE_DATA = {
+            "emergency fund": "💡 **Financial Directive:** An emergency reserve consists of 3-6 months of necessary operating capital maintained in highly liquid instruments (such as an HYSA) to defend against unexpected operational disruption.",
+            "investing": "💡 **Financial Directive:** Systematically compound long-term asset bases via programmatic dollar-cost averaging into low-fee diversified tracking indices, ignoring brief volatility spikes.",
+            "inflation": "💡 **Financial Directive:** Cash accounts steadily lose buying power to inflationary decay. Deploying residual liquidity into productive market assets preserves purchasing power benchmarks.",
+            "credit score": "💡 **Financial Directive:** Ensure flawless account status evaluations by leveraging automation structures to keep individual lines revolving below a 30% total balance utilization limit."
+        }
+        
+        for keyword, analysis in KNOWLEDGE_DATA.items():
+            if keyword in query:
+                st.info(analysis)
+                answered = True
+                break
+                
+    if not answered:
+        st.warning("⚠️ **AI Assistant Response:** Could not extract a precise analytical outcome matching your prompt parameters. Please verify your query or focus on dataset metrics like: *'What was my highest expense?'* or structural concepts like *'inflation'*.")
+
+st.html("</div>")
+
+# ==============================================================================
+# ROW 3: CHARTS & EXPENDITURE BUDGET MATRICES
 # ==============================================================================
 st.html("<div class='section-container'>")
 
@@ -254,7 +329,7 @@ with target_col_right:
 st.html("</div>")
 
 # ==============================================================================
-# OPERATIONAL SECTION 3: TRANSACTION DATA LEDGER WIDGET
+# ROW 4: TRANSACTION DATA LEDGER WIDGET
 # ==============================================================================
 st.html("<div class='section-container'>")
 st.markdown("##### :material/list_alt: Core Transaction History Ledger")
@@ -281,79 +356,4 @@ display_df = display_df.sort_values(by="Date", ascending=False)
 display_df['Amount'] = display_df['Amount'].map(lambda x: f"🟢 {symbol}{x:,.2f}" if x >= 0 else f"🔴 -{symbol}{abs(x):,.2f}")
 
 st.dataframe(display_df, use_container_width=True, hide_index=True)
-st.html("</div>")
-
-# ==============================================================================
-# OPERATIONAL SECTION 4: AI PERSONAL FINANCE ASSISTANT INTEGRATION
-# ==============================================================================
-st.html("<div class='section-container'>")
-st.markdown("##### :material/forum: AI Personal Finance Assistant Chat")
-st.caption("Submit queries against active database records or request general financial planning assistance below.")
-
-search_input = st.text_input(
-    "Ask a financial question...",
-    placeholder="e.g., 'What was my highest expense?', 'How much did I spend on food?', 'What is an emergency fund?'"
-)
-
-df_debts = df_filtered[df_filtered['Amount'] < 0]
-
-if search_input:
-    query = search_input.lower().strip()
-    answered = False
-    
-    if "highest" in query or "biggest" in query or "largest" in query or "max" in query:
-        if not df_debts.empty:
-            max_row = df_debts.loc[abs(df_debts['Amount']).idxmax()]
-            st.info(f"📊 **AI Assistant Response:** The single highest recorded expenditure matching your active filters is for **{max_row['Category']}** totaling **{symbol}{abs(max_row['Amount']):,.2f}** ({max_row['Notes']}) on {max_row['Date']}.")
-        else:
-            st.info("📊 **AI Assistant Response:** No negative transaction flows match your specified category layout.")
-        answered = True
-
-    elif "spend" in query or "expense" in query or "cost" in query or "total out" in query or "food" in query:
-        category_mapping = {"food": "Dining Out", "groceries": "Groceries", "salary": "Salary", "rent": "Rent/Utilities"}
-        
-        matched_category = None
-        for keyword, actual_cat in category_mapping.items():
-            if keyword in query:
-                matched_category = actual_cat
-                break
-        
-        if not matched_category:
-            for cat in df_filtered['Category'].unique():
-                if cat.lower() in query:
-                    matched_category = cat
-                    break
-                
-        if matched_category:
-            cat_sum = abs(df_filtered[df_filtered['Category'] == matched_category]['Amount'].sum())
-            st.info(f"📊 **AI Assistant Response:** Total tracking expenses allocated toward **{matched_category}** aggregate to **{symbol}{cat_sum:,.2f}** under current filters.")
-        else:
-            st.info(f"📊 **AI Assistant Response:** Aggregate expenditures spanning all active filtration matrices match **{symbol}{calc_expenses:,.2f}**.")
-        answered = True
-
-    elif "income" in query or "salary" in query or "earn" in query:
-        st.info(f"📊 **AI Assistant Response:** Total tracked income in this viewing profile is **{symbol}{calc_income:,.2f}**.")
-        answered = True
-
-    elif "save" in query or "savings" in query or "surplus" in query:
-        st.info(f"📊 **AI Assistant Response:** Based on your operational variables, your net dynamic liquid surplus evaluates to **{symbol}{calc_savings:,.2f}**.")
-        answered = True
-
-    if not answered:
-        KNOWLEDGE_DATA = {
-            "emergency fund": "💡 **Financial Directive:** An emergency reserve consists of 3-6 months of necessary operating capital maintained in highly liquid instruments (such as an HYSA) to defend against unexpected operational disruption.",
-            "investing": "💡 **Financial Directive:** Systematically compound long-term asset bases via programmatic dollar-cost averaging into low-fee diversified tracking indices, ignoring brief volatility spikes.",
-            "inflation": "💡 **Financial Directive:** Cash accounts steadily lose buying power to inflationary decay. Deploying residual liquidity into productive market assets preserves purchasing power benchmarks.",
-            "credit score": "💡 **Financial Directive:** Ensure flawless account status evaluations by leveraging automation structures to keep individual lines revolving below a 30% total balance utilization limit."
-        }
-        
-        for keyword, analysis in KNOWLEDGE_DATA.items():
-            if keyword in query:
-                st.info(analysis)
-                answered = True
-                break
-                
-    if not answered:
-        st.warning("⚠️ **AI Assistant Response:** Could not extract a precise analytical outcome matching your prompt parameters. Please verify your query or focus on dataset metrics like: *'What was my highest expense?'* or structural concepts like *'inflation'*.")
-
 st.html("</div>")
