@@ -99,6 +99,15 @@ currency_options = {"INR (₹)": "₹", "USD ($)": "$", "EUR (€)": "€", "GBP
 selected_currency_label = st.sidebar.selectbox("Reporting Currency", options=list(currency_options.keys()), index=0)
 symbol = currency_options[selected_currency_label]
 
+# Income baseline position directly beneath currency selection configuration
+income_base_input = st.sidebar.number_input(
+    f"Baseline Income Reference ({symbol})", 
+    min_value=100.0, 
+    value=150000.0, 
+    step=5000.0,
+    help="Define your primary monthly base income to compute target budget distribution metrics."
+)
+
 st.sidebar.divider()
 st.sidebar.markdown("### :material/filter_alt: Data Filters")
 
@@ -291,8 +300,7 @@ with chart_col_left:
 with target_col_right:
     st.markdown("##### :material/ads_click: Balanced 50/30/20 Budget Parameters")
     
-    income_base_input = st.number_input(f"Base Income Level Reference ({symbol})", min_value=100.0, value=150000.0, step=5000.0)
-    
+    # Target calculations use sidebar reference input value directly
     target_needs = income_base_input * 0.50
     target_wants = income_base_input * 0.30
     target_savings = income_base_input * 0.20
@@ -328,20 +336,18 @@ with target_col_right:
 st.html("</div>")
 
 # ==============================================================================
-# ROW 4: HISTORICAL ASSET VALUATION & NET WORTH TREND (NEW VISUALIZATION)
+# ROW 4: HISTORICAL ASSET VALUATION & NET WORTH TREND
 # ==============================================================================
 st.html("<div class='section-container'>")
 st.markdown("##### :material/timeline: Portfolio Capital Growth Trajectory")
 
 if not df_filtered.empty:
-    # Build a sequential time series visualization sorting from historical start paths
     df_sorted_dates = df_filtered.copy().sort_values(by="Date")
     df_sorted_dates['Cumulative_Surplus'] = df_sorted_dates['Amount'].cumsum()
     df_sorted_dates['Net_Worth_Timeline'] = mock_assets + df_sorted_dates['Cumulative_Surplus']
     
     fig_trend = go.Figure()
     
-    # Add Area Track mapping out Liquid Surplus
     fig_trend.add_trace(go.Scatter(
         x=df_sorted_dates['Date'],
         y=df_sorted_dates['Cumulative_Surplus'],
@@ -352,7 +358,6 @@ if not df_filtered.empty:
         line=dict(color='#3B82F6', width=3)
     ))
     
-    # Add Line Track tracking overall structural Wealth Vector Valuation
     fig_trend.add_trace(go.Scatter(
         x=df_sorted_dates['Date'],
         y=df_sorted_dates['Net_Worth_Timeline'],
@@ -367,16 +372,8 @@ if not df_filtered.empty:
         margin=dict(t=20, b=20, l=10, r=10),
         height=280,
         legend=dict(font=dict(color='#94A3B8'), orientation="h", y=1.1, x=0),
-        xaxis=dict(
-            gridcolor='#334155',
-            tickfont=dict(color='#94A3B8'),
-            showgrid=True
-        ),
-        yaxis=dict(
-            gridcolor='#334155',
-            tickfont=dict(color='#94A3B8'),
-            showgrid=True
-        )
+        xaxis=dict(gridcolor='#334155', tickfont=dict(color='#94A3B8'), showgrid=True),
+        yaxis=dict(gridcolor='#334155', tickfont=dict(color='#94A3B8'), showgrid=True)
     )
     st.plotly_chart(fig_trend, use_container_width=True)
 else:
@@ -406,7 +403,6 @@ with st.expander("➕ Register New Ledger Entry", expanded=False):
             st.session_state.transactions = pd.concat([st.session_state.transactions, pd.DataFrame([new_txn])], ignore_index=True)
             st.rerun()
 
-# Build and clean presentation layout frame
 display_df = df_filtered.copy()
 display_df = display_df.sort_values(by="Date", ascending=False)
 display_df['Amount'] = display_df['Amount'].map(lambda x: f"🟢 {symbol}{x:,.2f}" if x >= 0 else f"🔴 -{symbol}{abs(x):,.2f}")
