@@ -120,7 +120,6 @@ col_chart_left, col_budget_right = st.columns([5, 4], gap="large")
 with col_chart_left:
     st.subheader("📊 Expense Category Distribution")
     
-    # Filter to extract separate debit entries
     df_expenses = st.session_state.transactions[st.session_state.transactions['Amount'] < 0].copy()
     df_expenses['Amount'] = abs(df_expenses['Amount'])
     
@@ -158,7 +157,7 @@ with col_budget_right:
 st.write("---")
 
 # ==============================================================================
-# ROW 3: FULL-WIDTH TRANSACTION MODIFICATION LEDGER
+# ROW 3: TRANSACTION MODIFICATION LEDGER
 # ==============================================================================
 st.subheader("📝 Transaction Modification Ledger")
 
@@ -182,24 +181,77 @@ st.dataframe(display_df.sort_values(by="Date", ascending=False), use_container_w
 st.write("---")
 
 # ==============================================================================
-# ROW 4: STRATEGIC INSIGHTS CONSULTANT
+# ROW 4: DATA-DRIVEN FINANCIAL ADVISOR CHAT
 # ==============================================================================
-st.subheader("🙋‍♂️ Elite Asset Advisory Consultant")
-search_input = st.text_input("Query our structural analytics engine for tailored wealth protocols:")
+st.subheader("🙋‍♂️ Aegis Data-Aware Advisory Engine")
+st.markdown("Your financial virtual assistant scans your local database metrics to deliver real-time insight answers.")
 
-KNOWLEDGE_DATA = {
-    "emergency fund": "💡 **Emergency Fund Strategy:** Stash 3-6 months of essential survival expenses inside a High-Yield Savings Account. Do not touch this unless it is an absolute emergency.",
-    "investing": "💡 **Investment Philosophy:** Consistently buy broad, low-cost index funds tracking the S&P 500. Avoid timing market peaks; focus instead on steady, long-term wealth building.",
-    "inflation": "💡 **Inflation Reality:** Cash losing purchase value can be mitigated by holding appreciating assets like equities, commodities, or global index index investments.",
-    "credit score": "💡 **Credit Matrix Optimization:** Secure pristine payment timelines and hold revolving utilization thresholds under 30% of global limits to secure premier interest tiers."
-}
+search_input = st.text_input(
+    "Ask a question about your specific data or general finance (e.g., 'What is my highest expense?', 'How much did I spend on groceries?', 'What is inflation?')",
+    placeholder="Type your question here..."
+)
+
+# Extract structured contextual details from data vectors
+df_all = st.session_state.transactions
+df_debts = df_all[df_all['Amount'] < 0]
 
 if search_input:
-    found_key = False
-    for keyword, analysis in KNOWLEDGE_DATA.items():
-        if keyword in search_input.lower():
-            st.info(analysis)
-            found_key = True
-            break
-    if not found_key:
-        st.warning("🤖 System Advice: No direct semantic map detected. Try queries utilizing clear keywords such as 'emergency fund', 'investing', or 'inflation'.")
+    query = search_input.lower().strip()
+    answered = False
+    
+    # --------------------------------------------------------------------------
+    # CRITERIA 1: INTENT IDENTIFICATION - EXPENSE ANALYTICS FROM LIVE LEDGER DATA
+    # --------------------------------------------------------------------------
+    if "highest" in query or "biggest" in query or "largest" in query or "maximum" in query:
+        if not df_debts.empty:
+            max_row = df_debts.loc[abs(df_debts['Amount']).idxmax()]
+            st.info(f"📊 **Data Analysis Readout:** Your largest individual recorded expense was for **{max_row['Category']}** amounting to **{symbol}{abs(max_row['Amount']):,.2f}** ({max_row['Notes']}) on {max_row['Date']}.")
+        else:
+            st.info("📊 **Data Analysis Readout:** No outlays or expense vectors detected in the system log database yet.")
+        answered = True
+
+    elif "spend" in query or "expense" in query or "cost" in query or "total" in query:
+        # Check if user mentioned a specific category in their question
+        matched_category = None
+        for cat in df_all['Category'].unique():
+            if cat.lower() in query:
+                matched_category = cat
+                break
+                
+        if matched_category:
+            cat_sum = abs(df_all[df_all['Category'] == matched_category]['Amount'].sum())
+            st.info(f"📊 **Data Analysis Readout:** Your cumulative recorded allocation for **{matched_category}** currently aggregates to **{symbol}{cat_sum:,.2f}**.")
+        else:
+            st.info(f"📊 **Data Analysis Readout:** Your global outbound operating expense total across all data points combined is **{symbol}{total_expenses:,.2f}**.")
+        answered = True
+
+    elif "income" in query or "salary" in query or "earn" in query:
+        st.info(f"📊 **Data Analysis Readout:** Your comprehensive total tracked income records show an aggregate influx of **{symbol}{total_income:,.2f}**.")
+        answered = True
+
+    elif "save" in query or "savings" in query or "leftover" in query:
+        st.info(f"📊 **Data Analysis Readout:** After accounting for your total expenses, your current liquid unallocated baseline savings balance stands at **{symbol}{net_savings_liquid:,.2f}**.")
+        answered = True
+
+    # --------------------------------------------------------------------------
+    # CRITERIA 2: INTENT IDENTIFICATION - THEORETICAL FINANCIAL EDUCATION RULES
+    # --------------------------------------------------------------------------
+    if not answered:
+        KNOWLEDGE_DATA = {
+            "emergency fund": "💡 **General Wealth Strategy:** An emergency reserve represents 3-6 months of necessary living variables archived cleanly inside liquid safe vehicles like High-Yield Savings Accounts.",
+            "investing": "💡 **General Wealth Strategy:** Wealth building focuses heavily on dollar-cost averaging configurations targeting broad, low-cost index fund ETFs. Avoid high friction day-trading.",
+            "inflation": "💡 **General Wealth Strategy:** Inflation continuously devalues dormant fiat balances. Allocating capital into compounding equities shields underlying asset purchasing power over long horizons.",
+            "credit score": "💡 **General Wealth Strategy:** Optimize credit evaluations by setting automated repayment alerts and maintaining revolving line utilization metrics safely underneath 30% thresholds."
+        }
+        
+        for keyword, analysis in KNOWLEDGE_DATA.items():
+            if keyword in query:
+                st.info(analysis)
+                answered = True
+                break
+                
+    # --------------------------------------------------------------------------
+    # CRITERIA 3: INTENT IDENTIFICATION - FALLBACK ADVISORY ROUTING
+    # --------------------------------------------------------------------------
+    if not answered:
+        st.warning("🤖 **System Routing Notice:** I was unable to parse that exact data command. Try framing questions around your data metrics like *'What is my highest expense?'*, *'How much did I spend on Groceries?'*, or look up core general concepts such as *'emergency fund'*.")
