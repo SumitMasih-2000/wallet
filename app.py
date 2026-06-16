@@ -249,7 +249,7 @@ if search_input:
 st.html("</div>")
 
 # ==============================================================================
-# ROW 3: CHARTS & EXPENDITURE BUDGET MATRICES
+# ROW 3: DISTRIBUTION CHARTS & EXPENDITURE BUDGET MATRICES
 # ==============================================================================
 st.html("<div class='section-container'>")
 
@@ -264,7 +264,6 @@ with chart_col_left:
     if not df_only_expenses.empty:
         df_chart_grouped = df_only_expenses.groupby('Category', as_index=False)['Amount'].sum()
         
-        # Corporate Color Palette Matrix
         corporate_palette = ['#3B82F6', '#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899']
         
         fig_donut = go.Figure(data=[go.Pie(
@@ -329,7 +328,64 @@ with target_col_right:
 st.html("</div>")
 
 # ==============================================================================
-# ROW 4: TRANSACTION DATA LEDGER WIDGET
+# ROW 4: HISTORICAL ASSET VALUATION & NET WORTH TREND (NEW VISUALIZATION)
+# ==============================================================================
+st.html("<div class='section-container'>")
+st.markdown("##### :material/timeline: Portfolio Capital Growth Trajectory")
+
+if not df_filtered.empty:
+    # Build a sequential time series visualization sorting from historical start paths
+    df_sorted_dates = df_filtered.copy().sort_values(by="Date")
+    df_sorted_dates['Cumulative_Surplus'] = df_sorted_dates['Amount'].cumsum()
+    df_sorted_dates['Net_Worth_Timeline'] = mock_assets + df_sorted_dates['Cumulative_Surplus']
+    
+    fig_trend = go.Figure()
+    
+    # Add Area Track mapping out Liquid Surplus
+    fig_trend.add_trace(go.Scatter(
+        x=df_sorted_dates['Date'],
+        y=df_sorted_dates['Cumulative_Surplus'],
+        mode='lines+markers',
+        name='Liquid Reserve Growth',
+        fill='tozeroy',
+        fillcolor='rgba(59, 130, 246, 0.1)',
+        line=dict(color='#3B82F6', width=3)
+    ))
+    
+    # Add Line Track tracking overall structural Wealth Vector Valuation
+    fig_trend.add_trace(go.Scatter(
+        x=df_sorted_dates['Date'],
+        y=df_sorted_dates['Net_Worth_Timeline'],
+        mode='lines+markers',
+        name='Aggregated Net Worth Value',
+        line=dict(color='#F59E0B', width=4, dash='dash')
+    ))
+    
+    fig_trend.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=20, b=20, l=10, r=10),
+        height=280,
+        legend=dict(font=dict(color='#94A3B8'), orientation="h", y=1.1, x=0),
+        xaxis=dict(
+            gridcolor='#334155',
+            tickfont=dict(color='#94A3B8'),
+            showgrid=True
+        ),
+        yaxis=dict(
+            gridcolor='#334155',
+            tickfont=dict(color='#94A3B8'),
+            showgrid=True
+        )
+    )
+    st.plotly_chart(fig_trend, use_container_width=True)
+else:
+    st.info("Insufficient data segments found to calculate valuation timelines.")
+
+st.html("</div>")
+
+# ==============================================================================
+# ROW 5: TRANSACTION DATA LEDGER WIDGET
 # ==============================================================================
 st.html("<div class='section-container'>")
 st.markdown("##### :material/list_alt: Core Transaction History Ledger")
