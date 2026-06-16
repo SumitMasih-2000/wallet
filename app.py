@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import yfinance as yf
 from datetime import datetime
 
 # 1. Page Configuration
@@ -159,47 +158,26 @@ with col_budget_right:
 st.write("---")
 
 # ==============================================================================
-# ROW 3: LEDGER INGESTION & MARKET TRACKER
+# ROW 3: FULL-WIDTH TRANSACTION MODIFICATION LEDGER
 # ==============================================================================
-col_ledger, col_market = st.columns([1, 1], gap="large")
+st.subheader("📝 Transaction Modification Ledger")
 
-with col_ledger:
-    st.subheader("📝 Transaction Modification Ledger")
-    with st.expander("➕ Log New Transaction Matrix Element", expanded=False):
-        with st.form("ledger_form", clear_on_submit=True):
-            f_date = st.date_input("Posting Date", datetime.now())
-            f_cat = st.selectbox("Financial Node Category", ["Salary", "Groceries", "Dining Out", "Rent/Utilities", "Entertainment", "Investments", "Other"])
-            f_amt = st.number_input(f"Value Magnitude ({symbol})", value=0.0, step=500.0, help="Represent expenditures using a negative sign prefix.")
-            f_note = st.text_input("Operational Notes / Counterparty Specs")
-            
-            if st.form_submit_button("Commit Entry to Database"):
-                new_txn = {"Date": str(f_date), "Category": f_cat, "Amount": f_amt, "Notes": f_note}
-                st.session_state.transactions = pd.concat([st.session_state.transactions, pd.DataFrame([new_txn])], ignore_index=True)
-                st.rerun()
+with st.expander("➕ Log New Transaction Matrix Element", expanded=False):
+    with st.form("ledger_form", clear_on_submit=True):
+        f_date = st.date_input("Posting Date", datetime.now())
+        f_cat = st.selectbox("Financial Node Category", ["Salary", "Groceries", "Dining Out", "Rent/Utilities", "Entertainment", "Investments", "Other"])
+        f_amt = st.number_input(f"Value Magnitude ({symbol})", value=0.0, step=500.0, help="Represent expenditures using a negative sign prefix.")
+        f_note = st.text_input("Operational Notes / Counterparty Specs")
+        
+        if st.form_submit_button("Commit Entry to Database"):
+            new_txn = {"Date": str(f_date), "Category": f_cat, "Amount": f_amt, "Notes": f_note}
+            st.session_state.transactions = pd.concat([st.session_state.transactions, pd.DataFrame([new_txn])], ignore_index=True)
+            st.rerun()
 
-    # Prepping clean presentation dataframe copy
-    display_df = st.session_state.transactions.copy()
-    display_df['Amount'] = display_df['Amount'].map(lambda x: f"{symbol}{x:,.2f}" if x >= 0 else f"-{symbol}{abs(x):,.2f}")
-    st.dataframe(display_df.sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
-
-with col_market:
-    st.subheader("📈 Integrated Equity Analysis")
-    ticker = st.text_input("Security Ticker Code Identification:", "AAPL").upper().strip()
-    if ticker:
-        try:
-            stock = yf.Ticker(ticker)
-            hist = stock.history(period="1mo")
-            if not hist.empty:
-                c_p = hist['Close'].iloc[-1]
-                p_p = hist['Close'].iloc[-2]
-                chg = c_p - p_p
-                chg_pct = (chg / p_p) * 100
-                st.metric(label=f"{ticker} Exchange Spot Index", value=f"${c_p:,.2f}", delta=f"${chg:,.2f} ({chg_pct:.2f}%)")
-                st.line_chart(hist['Close'], color="#1A5F7A")
-            else:
-                st.caption("No dynamic data streams matching that asset code identifier.")
-        except Exception:
-            st.caption("Global database connection timeout.")
+# Prepping clean presentation dataframe copy
+display_df = st.session_state.transactions.copy()
+display_df['Amount'] = display_df['Amount'].map(lambda x: f"{symbol}{x:,.2f}" if x >= 0 else f"-{symbol}{abs(x):,.2f}")
+st.dataframe(display_df.sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
 
 st.write("---")
 
